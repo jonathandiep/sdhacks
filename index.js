@@ -1,7 +1,10 @@
 var express = require('express');
 var app = express();
 var Twit = require('twit');
-var User = require('./user'); // new
+var User = require('./user');
+var mongoose = require('mongoose');
+
+mongoose.connect('mongodb://jonathandiep:password123@apollo.modulusmongo.net:27017/ze2pabUq')
 
 var T = new Twit({
   consumer_key: 'lGzemE6STP9kvBaHVhiWJuDD0',
@@ -9,7 +12,6 @@ var T = new Twit({
   access_token: '19480353-KrLUMDOWU9CcPDdninpuWI8ebMIkntTFI6O2S3H6I',
   access_token_secret: 'o2yqzmNhe4XTkF2FApB3e2Sot8HfztjoKQvLMgaAizZx8'
 })
-
 
 console.log('working');
 
@@ -25,7 +27,7 @@ stream.on('tweet', function(tweet) {
 
   var userTweet = tweet.text;
 
-  twitterUser['handle'] = tweet.user.screen_name;
+  twitterUser['username'] = tweet.user.screen_name;
 
   var tweetText = userTweet.replace( /[^\d.]/g, '' );
   twitterUser['numOfPeople'] = parseInt(tweetText, 10);
@@ -33,31 +35,40 @@ stream.on('tweet', function(tweet) {
   if (userTweet.includes('#refugee') || userTweet.includes('#refugees')) {
     twitterUser['host'] = false;
     refugees.push(twitterUser);
-  }
-
-  else if (userTweet.includes('#host') || userTweet.includes('#hosts')) {
+  } else if (userTweet.includes('#host') || userTweet.includes('#hosts')) {
     twitterUser['host'] = true;
     hosts.push(twitterUser);
   }
 
-  var locationIndex = userTweet.search('#location');
-  locationIndex += 10;
-
   var location = [];
 
-  for ( var i = locationIndex; i < userTweet.length && /[a-zA-Z]/.test(userTweet[i]); i++) {
-    location.push( userTweet[i] );
+  if (userTweet.includes('#location')) {
+    var locationIndex = userTweet.search('#location') + 10;
+
+    for (var i = locationIndex; i < userTweet.length && /[a-zA-Z ]/.test(userTweet[i]); i++) {
+      location.push(userTweet[i]);
+    }
   }
 
   twitterUser['location'] = location.join('');
+
+  var user = new User();
+
+  user.username = twitterUser.username;
+  user.people = twitterUser.numOfPeople;
+  user.host = twitterUser.host;
+  user.location = twitterUser.location;
+
+  user.save(function(err) {
+    if (err) {
+      return err;
+    } else {
+      console.log('username added to database!');
+    }
+  })
 
   console.log('hosts: ' + JSON.stringify(hosts, null, 2));
   console.log('refugees: ' + JSON.stringify(refugees, null, 2));
 });
 
 // '@DiepJonathan #refugee #4 people in #location Barcelona.'
-
-// store handle as string
-// host = true or false
-// get number of people
-// get location

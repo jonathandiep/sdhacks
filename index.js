@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var Twit = require('twit');
+var User = require('./user'); // new
 
 var T = new Twit({
   consumer_key: 'lGzemE6STP9kvBaHVhiWJuDD0',

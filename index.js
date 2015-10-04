@@ -4,7 +4,7 @@ var Twit = require('twit');
 var User = require('./user');
 var mongoose = require('mongoose');
 
-mongoose.connect('mongodb://jonathandiep:password123@apollo.modulusmongo.net:27017/ze2pabUq')
+mongoose.connect('mongodb://username:password@apollo.modulusmongo.net:27017/eSog9uma')
 
 var T = new Twit({
   consumer_key: 'lGzemE6STP9kvBaHVhiWJuDD0',
@@ -30,7 +30,7 @@ stream.on('tweet', function(tweet) {
   twitterUser['username'] = tweet.user.screen_name;
 
   var tweetText = userTweet.replace( /[^\d.]/g, '' );
-  twitterUser['numOfPeople'] = parseInt(tweetText, 10);
+  twitterUser['people'] = parseInt(tweetText, 10);
 
   if (userTweet.includes('#refugee') || userTweet.includes('#refugees')) {
     twitterUser['host'] = false;
@@ -54,7 +54,7 @@ stream.on('tweet', function(tweet) {
 
   var user = new User({
     username: twitterUser.username,
-    people: twitterUser.numOfPeople,
+    people: twitterUser.people,
     host: twitterUser.host,
     location: twitterUser.location
   });
@@ -75,4 +75,6 @@ stream.on('tweet', function(tweet) {
   console.log('refugees: ' + JSON.stringify(refugees, null, 2));
 });
 
-// '@DiepJonathan #refugee #4 people in #location Barcelona.'
+
+
+// every second, run a query to mongo that deletes the oldest duplicates

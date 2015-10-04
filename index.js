@@ -52,15 +52,19 @@ stream.on('tweet', function(tweet) {
 
   twitterUser['location'] = location.join('');
 
-  var user = new User();
+  var user = new User({
+    username: twitterUser.username,
+    people: twitterUser.numOfPeople,
+    host: twitterUser.host,
+    location: twitterUser.location
+  });
 
-  user.username = twitterUser.username;
-  user.people = twitterUser.numOfPeople;
-  user.host = twitterUser.host;
-  user.location = twitterUser.location;
-
-  user.save(function(err) {
+  user.save(function(err, data) {
+    console.log("#############");
+    console.log(data);
+    console.log("#############");
     if (err) {
+      console.log(err);
       return err;
     } else {
       console.log('username added to database!');

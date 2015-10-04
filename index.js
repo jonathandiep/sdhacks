@@ -18,6 +18,35 @@ console.log('working');
 
 var stream = T.stream('statuses/filter', {track: '@DiepJonathan'});
 
+var notifyMatchedParticipants = function(host, refugee) {
+
+  // Text to send to host
+  var hostMessage = 'Hi @' + host.username +
+      '! Thanks for volunteering to host! You have been matched with ' +
+      '@' + refugee.username + 'who has '+ refugee.people +
+      ' people with them near ' + refugee.location;
+
+  // Text to send to refugee
+  var refugeeMessage = 'Hi @' + refugee.username +
+      '! You have been matched with a host! ' +
+      '@' + host.username + 'can accomodate up to ' + host.people +
+      ' people near' + host.location;
+
+  // Message Host
+  T.post('direct_messages/new', {screen_name: host.username,
+      text: hostMessage}, function(err, data, response) {
+        if (err) throw err;
+        console.log(data);
+      });
+
+  // Message Refugee
+  T.post('direct_messages/new', {screen_name: refugee.username,
+      text: refugeeMessage}, function(err, data, response) {
+        if (err) throw err;
+        console.log(data);
+      });
+}
+
 var refugees = [];
 var hosts = [];
 

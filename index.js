@@ -3,34 +3,33 @@ var app = express();
 var Twit = require('twit');
 var User = require('./user');
 var mongoose = require('mongoose');
-var async = require('async');
 
 mongoose.connect('mongodb://username:password@apollo.modulusmongo.net:27017/eSog9uma')
 
 var T = new Twit({
-  consumer_key: 'lGzemE6STP9kvBaHVhiWJuDD0',
-  consumer_secret: 'WmU52nDWuVlmc2mMTmiUqyQS6AY5FvabukPMJf1XbLAkqAMWK6',
-  access_token: '19480353-KrLUMDOWU9CcPDdninpuWI8ebMIkntTFI6O2S3H6I',
-  access_token_secret: 'o2yqzmNhe4XTkF2FApB3e2Sot8HfztjoKQvLMgaAizZx8'
+  consumer_key: 'CcAL0tc9SKIFtTJXGTFg5Agd3',
+  consumer_secret: '6cDbgsI01uMxZ7m0RvVaecG9OQkb1PwC6mcQOa79grDBcHO4qU',
+  access_token: '3773646014-1lG9ui4o7C8ioH5v9dS78Kdj5lYS2YA4OlwOkrg',
+  access_token_secret: 'FbK9R1YITrSSSKjQXSDeVclde4pZfhJQiaJBBrVGUlqb9'
 })
 
 console.log('working');
 
-var stream = T.stream('statuses/filter', {track: '@DiepJonathan'});
+var stream = T.stream('statuses/filter', {track: '@rfg_io'});
 
 var notifyMatchedParticipants = function(host, refugee) {
 
   // Text to send to host
   var hostMessage = 'Hi @' + host.username +
       '! Thanks for volunteering to host! You have been matched with ' +
-      '@' + refugee.username + 'who has '+ refugee.people +
+      '@' + refugee.username + ' who has '+ refugee.people +
       ' people with them near ' + refugee.location;
 
   // Text to send to refugee
   var refugeeMessage = 'Hi @' + refugee.username +
       '! You have been matched with a host! ' +
-      '@' + host.username + 'can accomodate up to ' + host.people +
-      ' people near' + host.location;
+      '@' + host.username + ' can accomodate up to ' + host.people +
+      ' people near ' + host.location;
 
   // Message Host
   T.post('direct_messages/new', {screen_name: host.username,
@@ -45,6 +44,18 @@ var notifyMatchedParticipants = function(host, refugee) {
         if (err) throw err;
         console.log(data);
       });
+
+  User.findOneAndRemove({ 'username': host.username}, {
+    username: 1, people: 1, host: 1, location: 1, time: 1
+  }, function(err, user) {
+    console.log('findone: ' + user);
+  })
+
+  User.findOneAndRemove({ 'username': refugee.username}, {
+    username: 1, people: 1, host: 1, location: 1, time: 1
+  }, function(err, user) {
+    console.log('findone: ' + user);
+  })
 }
 
 var refugees = [];
@@ -90,24 +101,63 @@ stream.on('tweet', function(tweet) {
     time: new Date(tweet.user.created_at)
   });
 
-
-  user.save(function(err, data) {
-    console.log("#############");
-    console.log(data);
-    console.log("#############");
-    if (err) {
-      console.log(err);
-      return err;
-    } else {
-      console.log('username added to database!');
-    }
-  })
-
   User.findOneAndRemove({ 'username': twitterUser.username}, {
     username: 1, people: 1, host: 1, location: 1, time: 1
-  }, function(err, user) {
-    console.log('findone: ' + user);
+  }, function(err, removedUser) {
+    console.log('findone: ' + removedUser);
   })
+
+  function saveUser() {
+    user.save(function(err, data) {
+      console.log("#############");
+      console.log(data);
+      console.log("#############");
+      if (err) {
+        console.log(err);
+        return err;
+      } else {
+        console.log('username added to database!');
+      }
+    })
+  };
+
+  var queryMatch = null;
+
+  if (twitterUser.host) {
+    User.find({ location: twitterUser.location, people: {$lte: twitterUser.people}, host: false}).sort({time : 1}).limit(1).exec(function(err, users) {
+        if (err) throw err;
+        console.log("######asshost#######");
+        queryMatch = users[0];
+        console.log(users);
+
+        console.log("$$$$$$$$$$$");
+        console.log(queryMatch);
+        console.log("$$$$$$$$$$$");
+        if (users.length > 0) {
+          notifyMatchedParticipants(user, queryMatch);
+        } else {
+          saveUser();
+        }
+    });
+  } else {
+    User.find({ location: twitterUser.location, people: {$gte: twitterUser.people}, host: true}).sort({time : 1}).limit(1).exec(function(err, users) {
+        if (err) throw err;
+        console.log("######assref#######");
+        if (users.length > 0) {
+            queryMatch = users[0];
+        }
+        console.log(users);
+
+        console.log("$$$$$$$$$$$");
+        console.log(queryMatch);
+        console.log("$$$$$$$$$$$");
+        if (users.length > 0) {
+          notifyMatchedParticipants(queryMatch, user);
+        } else {
+          saveUser();
+        }
+    });
+  }
 
   console.log('hosts: ' + JSON.stringify(hosts, null, 2));
   console.log('refugees: ' + JSON.stringify(refugees, null, 2));

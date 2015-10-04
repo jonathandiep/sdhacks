@@ -3,6 +3,7 @@ var app = express();
 var Twit = require('twit');
 var User = require('./user');
 var mongoose = require('mongoose');
+var async = require('async');
 
 mongoose.connect('mongodb://username:password@apollo.modulusmongo.net:27017/eSog9uma')
 
@@ -56,8 +57,10 @@ stream.on('tweet', function(tweet) {
     username: twitterUser.username,
     people: twitterUser.people,
     host: twitterUser.host,
-    location: twitterUser.location
+    location: twitterUser.location,
+    time: new Date(tweet.user.created_at)
   });
+
 
   user.save(function(err, data) {
     console.log("#############");
@@ -71,10 +74,12 @@ stream.on('tweet', function(tweet) {
     }
   })
 
+  User.findOneAndRemove({ 'username': twitterUser.username}, {
+    username: 1, people: 1, host: 1, location: 1, time: 1
+  }, function(err, user) {
+    console.log('findone: ' + user);
+  })
+
   console.log('hosts: ' + JSON.stringify(hosts, null, 2));
   console.log('refugees: ' + JSON.stringify(refugees, null, 2));
 });
-
-
-
-// every second, run a query to mongo that deletes the oldest duplicates

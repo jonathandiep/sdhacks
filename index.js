@@ -121,6 +121,21 @@ stream.on('tweet', function(tweet) {
     })
   };
 
+  var isFollowing = function(current_name) {
+    // Find all followers
+    var boolean = false;
+    T.get('followers/list', {screen_name: 'RFG_io', skip_status: true},
+        function (err, data, response) {
+          console.log('PRINT HERE ADFKJADF;AKDJFA;');
+          data.users.forEach(function (user) {
+            if (current_name.username == user.screen_name) {
+              boolean = true;
+            };
+          });
+        });
+    return boolean;
+  }
+
   var queryMatch = null;
 
   if (twitterUser.host) {
@@ -133,7 +148,18 @@ stream.on('tweet', function(tweet) {
         console.log("$$$$$$$$$$$");
         console.log(queryMatch);
         console.log("$$$$$$$$$$$");
-        if (users.length > 0) {
+        if (!isFollowing(user)) {
+          var params = {status: '@'+user.username+' please follow us back to get updates!'};
+          T.post('statuses/update', params, function (err, data, response) {
+            console.log(data);
+          });
+        } else if (!isFollowing(queryMatch)) {
+          var params = {status: '@'+queryMatch.username+' please follow us back to get updates!'};
+          T.post('statuses/update', params, function (err, data, response) {
+            console.log(data);
+          });
+        }
+        else if (users.length > 0) {
           notifyMatchedParticipants(user, queryMatch);
         } else {
           saveUser();
@@ -151,7 +177,18 @@ stream.on('tweet', function(tweet) {
         console.log("$$$$$$$$$$$");
         console.log(queryMatch);
         console.log("$$$$$$$$$$$");
-        if (users.length > 0) {
+
+        if (!isFollowing(user)) {
+          var params = {status: '@'+user.username+' please follow us back to get updates!'};
+          T.post('statuses/update', params, function (err, data, response) {
+            console.log(data);
+          });
+        } else if (!isFollowing(queryMatch)) {
+          var params = {status: '@'+queryMatch.username+' please follow us back to get updates!'};
+          T.post('statuses/update', params, function (err, data, response) {
+            console.log(data);
+          });
+        } else if (users.length > 0) {
           notifyMatchedParticipants(queryMatch, user);
         } else {
           saveUser();

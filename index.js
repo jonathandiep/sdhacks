@@ -4,7 +4,7 @@ var Twit = require('twit');
 var User = require('./user');
 var mongoose = require('mongoose');
 
-mongoose.connect('mongodb://username:password@apollo.modulusmongo.net:27017/eSog9uma')
+mongoose.connect('mongodb://rfguser:securepassword@candidate.53.mongolayer.com:10811,candidate.54.mongolayer.com:10725/users?replicaSet=set-5643a3968845ad4f22000a06')
 
 var T = new Twit({
   consumer_key: 'CcAL0tc9SKIFtTJXGTFg5Agd3',
@@ -79,6 +79,13 @@ stream.on('tweet', function(tweet) {
   } else if (userTweet.includes('#host') || userTweet.includes('#hosts')) {
     twitterUser['host'] = true;
     hosts.push(twitterUser);
+  } else {
+    console.log("sned message");
+    T.post('direct_messages/new', {screen_name: twitterUser.username,
+        text: "Oops! Looks like your tweet doesn't specify #host or #refugee. Please specify either #host or #refugee like this: I am #host or I am #refugee"}, function(err, data, response) {
+          if (err) throw err;
+          console.log(data);
+        });
   }
 
   var location = [];
@@ -89,9 +96,16 @@ stream.on('tweet', function(tweet) {
     for (var i = locationIndex; i < userTweet.length && /[a-zA-Z ]/.test(userTweet[i]); i++) {
       location.push(userTweet[i]);
     }
+  } else {
+    T.post('direct_messages/new', {screen_name: twitterUser.username,
+        text: "Oops! Looks like your tweet doesn't include a #location. Please specify a location like this: #location Athens"}, function(err, data, response) {
+          if (err) throw err;
+          console.log(data);
+        });
   }
 
   twitterUser['location'] = location.join('');
+
 
   var user = new User({
     username: twitterUser.username,
@@ -123,10 +137,10 @@ stream.on('tweet', function(tweet) {
 
   var queryMatch = null;
 
-  if (twitterUser.host) {
+  if (twitterUser.host && twitterUser.people !== null) {
     User.find({ location: twitterUser.location, people: {$lte: twitterUser.people}, host: false}).sort({time : 1}).limit(1).exec(function(err, users) {
         if (err) throw err;
-        console.log("######asshost#######");
+        console.log("######host#######");
         queryMatch = users[0];
         console.log(users);
 
@@ -142,7 +156,7 @@ stream.on('tweet', function(tweet) {
   } else {
     User.find({ location: twitterUser.location, people: {$gte: twitterUser.people}, host: true}).sort({time : 1}).limit(1).exec(function(err, users) {
         if (err) throw err;
-        console.log("######assref#######");
+        console.log("######ref#######");
         if (users.length > 0) {
             queryMatch = users[0];
         }
